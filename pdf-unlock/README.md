@@ -18,10 +18,7 @@ A small web app for iPhone that removes the open password from a PDF, such as a 
 
 The app is plain static files in this folder; there is no build step. It has to be served over `http(s)://` (opening `index.html` as a local file won't load the WebAssembly engine).
 
-**GitHub Pages** (free for public repos):
-
-1. In the repo, go to **Settings → Pages** and set **Source** to **GitHub Actions**.
-2. Merge this folder into `main`. The `Deploy Unlock PDF to GitHub Pages` workflow publishes it to `https://<owner>.github.io/<repo>/`. You can also run the workflow by hand from the **Actions** tab.
+**GitHub Pages** (free for public repos): every push to `main` that changes this folder runs the `Publish Unlock PDF to GitHub Pages` workflow, which copies it to the `gh-pages` branch. GitHub Pages serves that branch at `https://<owner>.github.io/<repo>/`. If the site doesn't show up, go to **Settings → Pages** and set **Source** to **Deploy from a branch**, branch `gh-pages`, folder `/ (root)`. On a fork, you may also need to turn on workflows in the **Actions** tab.
 
 **Anywhere else:** upload the contents of `pdf-unlock/` to any static host (Netlify, Vercel, Cloudflare Pages, S3).
 
