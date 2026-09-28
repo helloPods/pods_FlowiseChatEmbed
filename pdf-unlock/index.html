@@ -1,0 +1,1225 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Unlock PDF">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#F2F5F4" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0C1311" media="(prefers-color-scheme: dark)">
+<meta name="description" content="Remove the open password from a PDF on your phone, then share the unlocked copy.">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<link rel="manifest" href="manifest.webmanifest">
+<title>Unlock PDF</title>
+<style>
+  :root {
+    --bg: #f2f5f4;
+    --surface: #ffffff;
+    --ink: #0f1e1a;
+    --muted: #5b6c66;
+    --line: #dce4e1;
+    --accent: #0a7a5a;
+    --accent-press: #08684c;
+    --accent-ink: #ffffff;
+    --accent-soft: #e1f2eb;
+    --lock: #9a5800;
+    --lock-soft: #fbefdc;
+    --danger: #b42318;
+    --danger-soft: #fce9e7;
+    --focus: #0a7a5a;
+    --radius: 14px;
+    --font: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    --font-display: ui-rounded, 'SF Pro Rounded', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+    color-scheme: light;
+    padding-block: env(safe-area-inset-top, 0px) env(safe-area-inset-bottom, 0px);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme='light']) {
+      --bg: #0c1311;
+      --surface: #151e1b;
+      --ink: #e4edea;
+      --muted: #93a49e;
+      --line: #25322e;
+      --accent: #34c08f;
+      --accent-press: #2aa77b;
+      --accent-ink: #04130d;
+      --accent-soft: #12302a;
+      --lock: #f2b24c;
+      --lock-soft: #33260f;
+      --danger: #ff7b6e;
+      --danger-soft: #3a1714;
+      --focus: #34c08f;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme='dark'] {
+    --bg: #0c1311;
+    --surface: #151e1b;
+    --ink: #e4edea;
+    --muted: #93a49e;
+    --line: #25322e;
+    --accent: #34c08f;
+    --accent-press: #2aa77b;
+    --accent-ink: #04130d;
+    --accent-soft: #12302a;
+    --lock: #f2b24c;
+    --lock-soft: #33260f;
+    --danger: #ff7b6e;
+    --danger-soft: #3a1714;
+    --focus: #34c08f;
+    color-scheme: dark;
+  }
+
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+  html,
+  body {
+    margin: 0;
+  }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.45 var(--font);
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+    padding-inline: 16px;
+  }
+  body.has-dock {
+    padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+  }
+  [hidden] {
+    display: none !important;
+  }
+  button,
+  input {
+    font: inherit;
+    color: inherit;
+  }
+  svg {
+    display: block;
+    flex: none;
+  }
+
+  .app {
+    max-width: 560px;
+    margin: 0 auto;
+    padding-block: 28px 40px;
+    display: grid;
+    gap: 22px;
+  }
+
+  /* Header */
+  .top {
+    display: grid;
+    gap: 10px;
+  }
+  .mark {
+    width: 44px;
+    height: 44px;
+    border-radius: 11px;
+    background: var(--accent);
+    color: var(--accent-ink);
+    display: grid;
+    place-items: center;
+  }
+  h1 {
+    font-family: var(--font-display);
+    font-size: 34px;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    font-weight: 700;
+    margin: 4px 0 0;
+    text-wrap: balance;
+  }
+  .lede {
+    margin: 0;
+    color: var(--muted);
+    font-size: 16px;
+    max-width: 44ch;
+  }
+
+  /* Password field */
+  .group {
+    display: grid;
+    gap: 8px;
+  }
+  .label {
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    padding-inline: 4px;
+  }
+  .field {
+    display: flex;
+    align-items: center;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding-inline: 14px 4px;
+    min-height: 52px;
+  }
+  .field:focus-within {
+    border-color: var(--focus);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--focus) 22%, transparent);
+  }
+  .field input {
+    flex: 1;
+    min-width: 0;
+    border: 0;
+    background: transparent;
+    font-size: 17px; /* 16px+ stops iOS zooming on focus */
+    font-family: var(--font-mono);
+    letter-spacing: 0.02em;
+    padding-block: 12px;
+    outline: none;
+  }
+  .field input::placeholder {
+    color: var(--muted);
+    opacity: 0.7;
+    font-family: var(--font);
+    letter-spacing: 0;
+  }
+  .hint {
+    margin: 0;
+    padding-inline: 4px;
+    color: var(--muted);
+    font-size: 14px;
+  }
+
+  .icon-btn {
+    width: 44px;
+    height: 44px;
+    border: 0;
+    background: transparent;
+    border-radius: 10px;
+    display: grid;
+    place-items: center;
+    color: var(--muted);
+    cursor: pointer;
+  }
+  .icon-btn:hover {
+    color: var(--ink);
+  }
+  .icon-btn:focus-visible,
+  .btn:focus-visible,
+  .text-btn:focus-visible {
+    outline: 3px solid var(--focus);
+    outline-offset: 2px;
+  }
+
+  /* Picker */
+  .pick {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 16px 18px;
+    border-radius: var(--radius);
+    background: var(--accent);
+    color: var(--accent-ink);
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    transition: background-color 0.15s ease, transform 0.1s ease;
+  }
+  .pick:active {
+    background: var(--accent-press);
+    transform: scale(0.99);
+  }
+  .pick:focus-within {
+    outline: 3px solid var(--focus);
+    outline-offset: 3px;
+  }
+  .pick-text {
+    display: grid;
+    gap: 1px;
+  }
+  .pick-title {
+    font-family: var(--font-display);
+    font-size: 19px;
+    font-weight: 700;
+  }
+  .pick-sub {
+    font-size: 14px;
+    opacity: 0.85;
+  }
+  .visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  body.dragging .pick {
+    outline: 3px dashed var(--accent);
+    outline-offset: 4px;
+  }
+
+  /* File list */
+  .files {
+    display: grid;
+    gap: 8px;
+  }
+  .files-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    padding-inline: 4px;
+  }
+  .text-btn {
+    border: 0;
+    background: none;
+    color: var(--accent);
+    font-size: 15px;
+    font-weight: 600;
+    padding: 6px 4px;
+    cursor: pointer;
+    border-radius: 6px;
+  }
+  .list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .row {
+    padding: 12px 6px 12px 12px;
+    display: grid;
+    gap: 10px;
+  }
+  .row + .row {
+    border-top: 1px solid var(--line);
+  }
+  .row-main {
+    display: grid;
+    grid-template-columns: 36px minmax(0, 1fr) auto 36px;
+    align-items: center;
+    gap: 10px;
+  }
+  .badge {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: grid;
+    place-items: center;
+    background: var(--lock-soft);
+    color: var(--lock);
+  }
+  .row[data-state='done'] .badge {
+    background: var(--accent-soft);
+    color: var(--accent);
+  }
+  .row[data-state='wrong'] .badge,
+  .row[data-state='error'] .badge {
+    background: var(--danger-soft);
+    color: var(--danger);
+  }
+  .meta {
+    min-width: 0;
+  }
+  .name {
+    margin: 0;
+    font-weight: 600;
+    font-size: 15px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .status {
+    margin: 1px 0 0;
+    font-size: 13px;
+    color: var(--muted);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    column-gap: 8px;
+  }
+  .status > span {
+    white-space: nowrap;
+  }
+  .size {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 12px;
+  }
+  .row[data-state='done'] .msg {
+    color: var(--accent);
+    font-weight: 600;
+  }
+  .row[data-state='needs'] .msg {
+    color: var(--lock);
+    font-weight: 600;
+  }
+  .row[data-state='wrong'] .msg,
+  .row[data-state='error'] .msg {
+    color: var(--danger);
+    font-weight: 600;
+  }
+  .row .remove {
+    width: 36px;
+    height: 36px;
+  }
+  .spinner {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 2.5px solid currentColor;
+    border-right-color: transparent;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  .retry {
+    display: flex;
+    gap: 8px;
+    margin-left: 46px;
+    margin-right: 6px;
+  }
+  .retry .field {
+    flex: 1;
+    min-width: 0;
+    min-height: 44px;
+    padding-inline: 12px;
+  }
+  .retry .field input {
+    width: 100%;
+    padding-block: 8px;
+  }
+  .retry .btn {
+    min-height: 44px;
+  }
+  .detail {
+    margin: 0 6px 0 46px;
+    font-size: 13px;
+    color: var(--muted);
+    overflow-wrap: anywhere;
+  }
+
+  .btn {
+    border: 0;
+    border-radius: 12px;
+    padding: 0 16px;
+    min-height: 44px;
+    font-weight: 600;
+    font-size: 15px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    white-space: nowrap;
+  }
+  .btn.primary {
+    background: var(--accent);
+    color: var(--accent-ink);
+  }
+  .btn.primary:active {
+    background: var(--accent-press);
+  }
+  .btn.soft {
+    background: var(--accent-soft);
+    color: var(--accent);
+  }
+  .btn.small {
+    min-height: 36px;
+    padding: 0 12px;
+    border-radius: 10px;
+  }
+  .btn:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+
+  /* How it works */
+  .how {
+    display: grid;
+    gap: 10px;
+  }
+  h2 {
+    font-family: var(--font-display);
+    font-size: 20px;
+    font-weight: 700;
+    margin: 0;
+  }
+  .steps {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 12px;
+    counter-reset: step;
+  }
+  .steps li {
+    counter-increment: step;
+    display: grid;
+    grid-template-columns: 28px 1fr;
+    gap: 12px;
+    align-items: start;
+    color: var(--muted);
+  }
+  .steps li::before {
+    content: counter(step);
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    color: var(--ink);
+    font-weight: 700;
+    font-size: 14px;
+    display: grid;
+    place-items: center;
+  }
+  .steps strong {
+    color: var(--ink);
+    font-weight: 600;
+  }
+
+  .tip {
+    margin: 0;
+    padding: 12px 14px;
+    border-radius: var(--radius);
+    background: var(--accent-soft);
+    color: var(--ink);
+    font-size: 14px;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+  }
+  .tip svg {
+    margin-top: 1px;
+  }
+  .tip-text {
+    flex: 1;
+  }
+  .tip .icon-btn {
+    width: 32px;
+    height: 32px;
+    margin: -6px -6px 0 0;
+  }
+
+  .fine {
+    margin: 0;
+    font-size: 13px;
+    color: var(--muted);
+    padding-inline: 4px;
+  }
+
+  /* Bottom action bar */
+  .dock {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
+    background: color-mix(in srgb, var(--bg) 88%, transparent);
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
+    border-top: 1px solid var(--line);
+  }
+  .dock-inner {
+    max-width: 560px;
+    margin: 0 auto;
+    display: flex;
+    gap: 10px;
+  }
+  .dock .btn {
+    flex: 1;
+    min-height: 50px;
+    font-size: 17px;
+  }
+
+  .toast {
+    position: fixed;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+    max-width: calc(100% - 32px);
+    background: var(--ink);
+    color: var(--bg);
+    padding: 10px 16px;
+    border-radius: 12px;
+    font-size: 14px;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18);
+  }
+  body.has-dock .toast {
+    bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .spinner {
+      animation-duration: 2.4s;
+    }
+    .pick {
+      transition: none;
+    }
+  }
+</style>
+</head>
+<body>
+<main class="app">
+  <header class="top">
+    <div class="mark" aria-hidden="true">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2.5"/><path d="M8 11V7.5a4 4 0 0 1 7.6-1.7"/></svg>
+    </div>
+    <h1>Unlock PDF</h1>
+    <p class="lede">Remove the password from bank statements and tax PDFs before you send them to your CA. The file is unlocked on this device and never uploaded.</p>
+  </header>
+
+  <section class="group" aria-labelledby="password-label">
+    <label class="label" id="password-label" for="password">Password</label>
+    <div class="field">
+      <input id="password" type="password" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="done" placeholder="e.g. ABCDE1234F or 01011990">
+      <button type="button" class="icon-btn" id="toggle-password" aria-label="Show password" aria-pressed="false">
+        <svg class="eye-open" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>
+        <svg class="eye-shut" hidden width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.9 5.2A10 10 0 0 1 12 5c6.4 0 10 7 10 7a17 17 0 0 1-2.6 3.5M6.6 6.6A17 17 0 0 0 2 12s3.6 7 10 7a9.6 9.6 0 0 0 5.4-1.6"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/><path d="M3 3l18 18"/></svg>
+      </button>
+    </div>
+    <p class="hint">Case-sensitive. It's tried on every PDF you add. If one file uses a different password, you can type it on that file.</p>
+  </section>
+
+  <label class="pick" id="pick">
+    <input id="file-input" class="visually-hidden" type="file" accept="application/pdf,.pdf" multiple>
+    <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z"/><path d="M14 3v5h5"/><path d="M12 11v6M9 14h6"/></svg>
+    <span class="pick-text">
+      <span class="pick-title">Choose PDFs</span>
+      <span class="pick-sub">From Files, iCloud Drive, Mail or WhatsApp</span>
+    </span>
+  </label>
+
+  <section class="files" id="files" hidden aria-labelledby="files-title">
+    <div class="files-head">
+      <h2 id="files-title">Files</h2>
+      <button type="button" class="text-btn" id="clear-all">Clear all</button>
+    </div>
+    <ul class="list" id="file-list"></ul>
+  </section>
+
+  <p class="tip" id="install-tip" hidden>
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 8l5-5 5 5"/><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg>
+    <span class="tip-text">Keep this on your iPhone: tap Share in Safari, then <strong>Add to Home Screen</strong>. It opens like an app.</span>
+    <button type="button" class="icon-btn" id="dismiss-tip" aria-label="Dismiss tip">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+    </button>
+  </p>
+
+  <section class="how" id="how" aria-labelledby="how-title">
+    <h2 id="how-title">How it works</h2>
+    <ol class="steps">
+      <li><span><strong>Type the password</strong> you use to open the statement.</span></li>
+      <li><span><strong>Choose the PDFs.</strong> Pick several at once if they share a password.</span></li>
+      <li><span><strong>Send the unlocked copy</strong> to your CA on WhatsApp or Mail, or save it to Files.</span></li>
+    </ol>
+  </section>
+
+  <p class="fine">Works with AES-256, AES-128 and RC4 protected PDFs, and also removes print and copy restrictions. Your original file stays as it is.</p>
+</main>
+
+<div class="dock" id="dock" hidden>
+  <div class="dock-inner">
+    <button type="button" class="btn primary" id="share-all"></button>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<script>
+  (() => {
+    'use strict';
+
+    // ---------- Where the unlocked file goes ----------
+    // Inside a claude.ai artifact the page saves through the `downloads` capability
+    // (the Claude iOS app shows the share sheet). On its own, the page uses the
+    // Web Share sheet where available and a plain download everywhere else.
+    const inArtifact = typeof window.claude?.use === 'function';
+    let downloadsApi = null;
+    const downloadsReady = inArtifact ? window.claude.use('downloads').catch(() => null) : Promise.resolve(null);
+    downloadsReady.then((api) => {
+      downloadsApi = api;
+      refreshActionLabels();
+    });
+
+    const canShareFiles = (() => {
+      if (inArtifact || !navigator.canShare) return false;
+      try {
+        return navigator.canShare({ files: [new File(['%PDF'], 'test.pdf', { type: 'application/pdf' })] });
+      } catch {
+        return false;
+      }
+    })();
+
+    const actionVerb = () => (inArtifact ? 'Save' : canShareFiles ? 'Share' : 'Download');
+
+    // ---------- Engines ----------
+    const VENDOR = 'vendor/';
+    const scriptLoads = new Map();
+    function loadScript(src) {
+      if (!scriptLoads.has(src)) {
+        scriptLoads.set(
+          src,
+          new Promise((resolve, reject) => {
+            const s = document.createElement('script');
+            s.src = src;
+            s.onload = resolve;
+            s.onerror = () => reject(new Error('Could not load ' + src));
+            document.head.appendChild(s);
+          }),
+        );
+      }
+      return scriptLoads.get(src);
+    }
+
+    class UnlockError extends Error {
+      constructor(code, message) {
+        super(message || code);
+        this.code = code; // 'needs' | 'wrong' | 'bad'
+      }
+    }
+
+    // qpdf (WebAssembly) is the main engine: it removes encryption without
+    // rewriting the rest of the file.
+    let qpdfPromise = null;
+    let qpdfUnavailable = false;
+    let qpdfSink = null;
+
+    function getQpdf() {
+      if (!qpdfPromise) {
+        qpdfPromise = (async () => {
+          await loadScript(VENDOR + 'qpdf.js');
+          const factory = window.Module;
+          if (typeof factory !== 'function') throw new Error('qpdf did not load');
+          // The emscripten glue binds console.log/error when an instance is created.
+          // Route them through a sink so qpdf's messages ("invalid password") can be read.
+          const origLog = console.log;
+          const origErr = console.error;
+          const tap = (orig) =>
+            function (...args) {
+              if (qpdfSink) qpdfSink.push(args.join(' '));
+              else orig.apply(console, args);
+            };
+          console.log = tap(origLog);
+          console.error = tap(origErr);
+          let ready;
+          try {
+            ready = factory({ locateFile: (path) => new URL(VENDOR + path, document.baseURI).href });
+          } finally {
+            console.log = origLog;
+            console.error = origErr;
+          }
+          return await ready;
+        })();
+        qpdfPromise.catch((err) => {
+          console.warn('qpdf unavailable, using pdf-lib instead:', err);
+          qpdfUnavailable = true;
+        });
+      }
+      return qpdfPromise;
+    }
+
+    function runQpdf(q, args) {
+      qpdfSink = [];
+      let code;
+      try {
+        code = q.callMain(args);
+      } catch (e) {
+        code = typeof e?.status === 'number' ? e.status : -1;
+        if (code === -1) {
+          // The instance aborted; start a fresh one next time.
+          qpdfPromise = null;
+        }
+      }
+      const log = qpdfSink.join('\n');
+      qpdfSink = null;
+      return { code, log };
+    }
+
+    function cleanLog(log) {
+      return log
+        .split('\n')
+        .map((line) => line.replace(/^.*?\/in\.pdf:\s*/, '').trim())
+        .filter(Boolean)
+        .slice(0, 2)
+        .join(' ');
+    }
+
+    async function unlockWithQpdf(bytes, password) {
+      const q = await getQpdf();
+      const IN = '/in.pdf';
+      const OUT = '/out.pdf';
+      const rm = (p) => {
+        try {
+          q.FS.unlink(p);
+        } catch {}
+      };
+      q.FS.writeFile(IN, bytes);
+      try {
+        const attempt = (pw) => {
+          rm(OUT);
+          const args = pw ? ['--password=' + pw, '--decrypt', IN, OUT] : ['--decrypt', IN, OUT];
+          const r = runQpdf(q, args);
+          // 0 = success, 3 = success with warnings (e.g. a repaired xref table).
+          if (r.code === 0 || r.code === 3) {
+            try {
+              return { ok: true, out: q.FS.readFile(OUT) };
+            } catch {}
+          }
+          return { ok: false, badPassword: /invalid password/i.test(r.log), log: r.log };
+        };
+
+        // Try without a password first: files that only carry print/copy
+        // restrictions reject any wrong password but open with none.
+        let r = attempt('');
+        if (r.ok) {
+          const encrypted = runQpdf(q, ['--is-encrypted', IN]).code === 0;
+          return { out: r.out, kind: encrypted ? 'restrictions' : 'plain' };
+        }
+        if (!r.badPassword) throw new UnlockError('bad', cleanLog(r.log));
+        if (!password) throw new UnlockError('needs');
+        r = attempt(password);
+        if (!r.ok && r.badPassword && password.trim() !== password) r = attempt(password.trim());
+        if (r.ok) return { out: r.out, kind: 'unlocked' };
+        if (r.badPassword) throw new UnlockError('wrong');
+        throw new UnlockError('bad', cleanLog(r.log));
+      } finally {
+        rm(IN);
+        rm(OUT);
+      }
+    }
+
+    // pdf-lib (pure JavaScript) is the backup for browsers that block
+    // WebAssembly and for files qpdf can't parse.
+    async function unlockWithPdfLib(bytes, password) {
+      await loadScript(VENDOR + 'pdf-lib.min.js');
+      const { PDFDocument } = window.PDFLib;
+      const open = async (pw) => {
+        try {
+          return { doc: await PDFDocument.load(bytes.slice(), { password: pw, updateMetadata: false }) };
+        } catch (err) {
+          return { err };
+        }
+      };
+      const isPasswordError = (err) => /password/i.test(String(err?.message));
+
+      let r = await open('');
+      let kind;
+      if (r.doc) {
+        kind = hasEncryptDictionary(bytes) ? 'restrictions' : 'plain';
+      } else if (!isPasswordError(r.err)) {
+        throw new UnlockError('bad', String(r.err?.message || r.err));
+      } else if (!password) {
+        throw new UnlockError('needs');
+      } else {
+        r = await open(password);
+        if (r.err && isPasswordError(r.err) && password.trim() !== password) r = await open(password.trim());
+        if (r.err) throw isPasswordError(r.err) ? new UnlockError('wrong') : new UnlockError('bad', String(r.err?.message || r.err));
+        kind = 'unlocked';
+      }
+      return { out: await r.doc.save(), kind };
+    }
+
+    function hasEncryptDictionary(bytes) {
+      return new TextDecoder('latin1').decode(bytes).includes('/Encrypt');
+    }
+
+    function looksLikePdf(bytes) {
+      const head = new TextDecoder('latin1').decode(bytes.subarray(0, 1024));
+      return head.includes('%PDF');
+    }
+
+    async function unlock(bytes, password) {
+      if (!looksLikePdf(bytes)) throw new UnlockError('bad', "This file isn't a PDF.");
+      if (!qpdfUnavailable) {
+        try {
+          return await unlockWithQpdf(bytes, password);
+        } catch (err) {
+          if (err instanceof UnlockError && err.code !== 'bad') throw err;
+          console.warn('qpdf could not unlock this file, trying pdf-lib:', err);
+        }
+      }
+      return unlockWithPdfLib(bytes, password);
+    }
+
+    // Warm up the engine while the user types the password.
+    getQpdf().catch(() => {});
+
+    // ---------- State ----------
+    const $ = (id) => document.getElementById(id);
+    const passwordInput = $('password');
+    const fileInput = $('file-input');
+    const listEl = $('file-list');
+    const filesSection = $('files');
+    const howSection = $('how');
+    const dock = $('dock');
+    const shareAllBtn = $('share-all');
+    const toastEl = $('toast');
+
+    const items = [];
+    let nextId = 1;
+    let queue = Promise.resolve();
+    const enqueue = (task) => (queue = queue.then(task, task));
+
+    const ICONS = {
+      lock: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2.5"/><path d="M8 11V7.5a4 4 0 0 1 8 0V11"/></svg>',
+      open: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2.5"/><path d="M8 11V7.5a4 4 0 0 1 7.6-1.7"/></svg>',
+      alert: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5M12 16.5v.01"/></svg>',
+      spin: '<span class="spinner" aria-hidden="true"></span>',
+      share: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 8l5-5 5 5"/><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg>',
+      save: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5"/><path d="M5 20h14"/></svg>',
+      close: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>',
+    };
+
+    const MESSAGES = {
+      working: 'Unlocking…',
+      unlocked: 'Password removed',
+      restrictions: 'Restrictions removed',
+      plain: "Wasn't locked",
+      needs: 'Needs the password',
+      wrong: 'Wrong password',
+      error: "Couldn't open this file",
+    };
+
+    function formatSize(n) {
+      if (n < 1024) return n + ' B';
+      if (n < 1024 * 1024) return Math.round(n / 1024) + ' KB';
+      return (n / (1024 * 1024)).toFixed(1) + ' MB';
+    }
+
+    function unlockedName(name) {
+      const base = name.replace(/\.pdf$/i, '') || 'document';
+      return base + '-unlocked.pdf';
+    }
+
+    function buildRow(item) {
+      const li = document.createElement('li');
+      li.className = 'row';
+      li.innerHTML = `
+        <div class="row-main">
+          <span class="badge" aria-hidden="true"></span>
+          <div class="meta">
+            <p class="name"></p>
+            <p class="status"><span class="msg"></span><span class="size"></span></p>
+          </div>
+          <button type="button" class="btn soft small action" hidden></button>
+          <button type="button" class="icon-btn remove" aria-label="Remove">${ICONS.close}</button>
+        </div>
+        <form class="retry" hidden>
+          <div class="field">
+            <input type="password" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="go" placeholder="Password">
+          </div>
+          <button type="submit" class="btn primary small">Unlock</button>
+        </form>
+        <p class="detail" hidden></p>`;
+      const el = {
+        li,
+        badge: li.querySelector('.badge'),
+        name: li.querySelector('.name'),
+        size: li.querySelector('.size'),
+        msg: li.querySelector('.msg'),
+        action: li.querySelector('.action'),
+        remove: li.querySelector('.remove'),
+        retry: li.querySelector('.retry'),
+        retryInput: li.querySelector('.retry input'),
+        detail: li.querySelector('.detail'),
+      };
+      el.name.textContent = item.name;
+      el.name.title = item.name;
+      el.size.textContent = formatSize(item.size);
+      el.remove.setAttribute('aria-label', 'Remove ' + item.name);
+      el.retryInput.id = 'pw-' + item.id;
+      el.retryInput.setAttribute('aria-label', 'Password for ' + item.name);
+
+      el.action.addEventListener('click', () => deliver([item]));
+      el.remove.addEventListener('click', () => removeItem(item));
+      el.retry.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const pw = el.retryInput.value;
+        if (!pw) {
+          el.retryInput.focus();
+          return;
+        }
+        enqueue(() => process(item, pw));
+      });
+      item.el = el;
+      return li;
+    }
+
+    function renderRow(item) {
+      const el = item.el;
+      const state = item.state;
+      el.li.dataset.state = state;
+      el.badge.innerHTML = state === 'working' ? ICONS.spin : state === 'done' ? ICONS.open : state === 'needs' ? ICONS.lock : ICONS.alert;
+      el.msg.textContent = state === 'done' ? MESSAGES[item.kind] : MESSAGES[state];
+
+      el.action.hidden = state !== 'done';
+      if (state === 'done') setActionLabel(el.action);
+
+      el.retry.hidden = !(state === 'needs' || state === 'wrong');
+
+      let detail = '';
+      if (state === 'error') detail = item.detail;
+      else if (state === 'wrong') detail = 'Passwords are case-sensitive. Check capital letters and the date format (for example DDMMYYYY).';
+      el.detail.hidden = !detail;
+      el.detail.textContent = detail;
+    }
+
+    function setActionLabel(btn, count) {
+      const verb = actionVerb();
+      const icon = verb === 'Share' ? ICONS.share : ICONS.save;
+      const label = count ? `${verb} ${count} PDFs` : verb;
+      btn.innerHTML = icon + '<span></span>';
+      btn.querySelector('span').textContent = label;
+    }
+
+    function refreshActionLabels() {
+      for (const item of items) if (item.state === 'done') setActionLabel(item.el.action);
+      updateDock();
+    }
+
+    function updateDock() {
+      const ready = items.filter((i) => i.state === 'done');
+      const show = ready.length > 1;
+      dock.hidden = !show;
+      document.body.classList.toggle('has-dock', show);
+      if (show) setActionLabel(shareAllBtn, ready.length);
+      filesSection.hidden = items.length === 0;
+      howSection.hidden = items.length > 0;
+    }
+
+    async function process(item, password, { quiet = false } = {}) {
+      if (!items.includes(item) || item.state === 'done') return;
+      const before = item.state;
+      item.tried.add(password);
+      item.state = 'working';
+      renderRow(item);
+      // Let the spinner paint before the (synchronous) WebAssembly work starts.
+      await new Promise((r) => requestAnimationFrame(() => setTimeout(r, 0)));
+      try {
+        const result = await unlock(item.bytes, password);
+        item.state = 'done';
+        item.kind = result.kind;
+        item.out = new Blob([result.out], { type: 'application/pdf' });
+        item.outName = unlockedName(item.name);
+        item.bytes = null;
+        item.detail = '';
+        renderRow(item);
+        updateDock();
+        if (password) tryOnOthers(password);
+      } catch (err) {
+        if (quiet) {
+          item.state = before;
+        } else if (err instanceof UnlockError && (err.code === 'needs' || err.code === 'wrong')) {
+          item.state = password ? 'wrong' : 'needs';
+        } else {
+          item.state = 'error';
+          item.detail = err instanceof UnlockError ? err.message : 'Something went wrong while reading it. Try again, or re-download the PDF.';
+          console.error(err);
+        }
+        renderRow(item);
+      }
+    }
+
+    // Queue a password for every file still waiting for one, skipping files
+    // that already tried it.
+    function retryLocked(password, options) {
+      for (const item of items) {
+        if ((item.state === 'needs' || item.state === 'wrong') && !item.tried.has(password)) {
+          item.tried.add(password);
+          enqueue(() => process(item, password, options));
+        }
+      }
+    }
+
+    // A password that worked on one file is often right for the rest.
+    function tryOnOthers(password) {
+      retryLocked(password, { quiet: true });
+    }
+
+    async function addFiles(fileList) {
+      const files = Array.from(fileList || []);
+      if (!files.length) return;
+      const password = passwordInput.value;
+      for (const file of files) {
+        const item = { id: nextId++, name: file.name || 'document.pdf', size: file.size, state: 'working', tried: new Set(), bytes: null };
+        items.push(item);
+        listEl.appendChild(buildRow(item));
+        renderRow(item);
+        updateDock();
+        enqueue(async () => {
+          if (!items.includes(item)) return;
+          try {
+            item.bytes = new Uint8Array(await file.arrayBuffer());
+          } catch {
+            item.state = 'error';
+            item.detail = "Couldn't read the file from your phone. Try choosing it again.";
+            renderRow(item);
+            return;
+          }
+          await process(item, password);
+        });
+      }
+    }
+
+    function removeItem(item) {
+      const i = items.indexOf(item);
+      if (i >= 0) items.splice(i, 1);
+      item.el.li.remove();
+      item.bytes = null;
+      item.out = null;
+      updateDock();
+    }
+
+    // ---------- Delivering the unlocked files ----------
+    function toast(text) {
+      toastEl.textContent = text;
+      toastEl.hidden = false;
+      clearTimeout(toast.timer);
+      toast.timer = setTimeout(() => (toastEl.hidden = true), 3200);
+    }
+
+    function downloadViaLink(files) {
+      files.forEach((file, i) => {
+        setTimeout(() => {
+          const url = URL.createObjectURL(file);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = file.name;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          setTimeout(() => URL.revokeObjectURL(url), 60000);
+        }, i * 400);
+      });
+    }
+
+    async function deliver(list) {
+      const ready = list.filter((i) => i.state === 'done' && i.out);
+      if (!ready.length) return;
+      const files = ready.map((i) => new File([i.out], i.outName, { type: 'application/pdf' }));
+
+      if (inArtifact) {
+        const api = downloadsApi || (await downloadsReady);
+        if (!api) {
+          toast("Saving isn't available in this view.");
+          return;
+        }
+        for (const file of files) {
+          try {
+            await api.save({ filename: file.name, data: file });
+          } catch (err) {
+            if (err?.code === 'declined') break;
+            toast(err?.code === 'rate_limited' ? 'Finish the open save first.' : "Couldn't save " + file.name + '.');
+            break;
+          }
+        }
+        return;
+      }
+
+      if (canShareFiles) {
+        // Called straight from the tap so iOS keeps the user gesture.
+        try {
+          await navigator.share({ files });
+        } catch (err) {
+          if (err?.name === 'AbortError') return; // user closed the sheet
+          downloadViaLink(files);
+        }
+        return;
+      }
+      downloadViaLink(files);
+    }
+
+    // ---------- Wiring ----------
+    fileInput.addEventListener('change', () => {
+      addFiles(fileInput.files);
+      fileInput.value = '';
+    });
+
+    shareAllBtn.addEventListener('click', () => deliver(items));
+
+    $('clear-all').addEventListener('click', () => {
+      for (const item of items.slice()) removeItem(item);
+    });
+
+    const toggle = $('toggle-password');
+    toggle.addEventListener('click', () => {
+      const show = passwordInput.type === 'password';
+      passwordInput.type = show ? 'text' : 'password';
+      toggle.setAttribute('aria-pressed', String(show));
+      toggle.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+      toggle.querySelector('.eye-open').hidden = show;
+      toggle.querySelector('.eye-shut').hidden = !show;
+    });
+
+    // A new shared password is tried on every file still waiting for one.
+    passwordInput.addEventListener('change', () => {
+      if (passwordInput.value) retryLocked(passwordInput.value);
+    });
+    passwordInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        passwordInput.blur(); // fires `change`
+      }
+    });
+
+    // Drag and drop on desktop.
+    let dragDepth = 0;
+    document.addEventListener('dragenter', (e) => {
+      if (!e.dataTransfer?.types?.includes('Files')) return;
+      e.preventDefault();
+      dragDepth++;
+      document.body.classList.add('dragging');
+    });
+    document.addEventListener('dragover', (e) => {
+      if (e.dataTransfer?.types?.includes('Files')) e.preventDefault();
+    });
+    document.addEventListener('dragleave', () => {
+      dragDepth = Math.max(0, dragDepth - 1);
+      if (!dragDepth) document.body.classList.remove('dragging');
+    });
+    document.addEventListener('drop', (e) => {
+      if (!e.dataTransfer?.files?.length) return;
+      e.preventDefault();
+      dragDepth = 0;
+      document.body.classList.remove('dragging');
+      addFiles(e.dataTransfer.files);
+    });
+
+    // "Add to Home Screen" tip for iPhone Safari.
+    (() => {
+      const tip = $('install-tip');
+      const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      const standalone = navigator.standalone === true || window.matchMedia?.('(display-mode: standalone)').matches;
+      let dismissed = false;
+      try {
+        dismissed = localStorage.getItem('unlock-pdf:tip-dismissed') === '1';
+      } catch {}
+      tip.hidden = inArtifact || !isIOS || standalone || dismissed;
+      $('dismiss-tip').addEventListener('click', () => {
+        tip.hidden = true;
+        try {
+          localStorage.setItem('unlock-pdf:tip-dismissed', '1');
+        } catch {}
+      });
+    })();
+
+    updateDock();
+  })();
+</script>
+</body>
+</html>
