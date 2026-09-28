@@ -348,13 +348,11 @@
     align-items: baseline;
     column-gap: 8px;
   }
-  .status > span {
-    white-space: nowrap;
-  }
   .size {
     font-family: var(--font-mono);
     font-variant-numeric: tabular-nums;
     font-size: 12px;
+    white-space: nowrap;
   }
   .row[data-state='done'] .msg {
     color: var(--accent);
@@ -563,11 +561,124 @@
     bottom: calc(96px + env(safe-area-inset-bottom, 0px));
   }
 
+  /* Saved passwords */
+  .vault {
+    display: grid;
+    gap: 12px;
+    padding: 14px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+  }
+  .vault-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .vault-head h2 {
+    font-size: 16px;
+  }
+  .switch {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  .switch input {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+  .switch-track {
+    flex: none;
+    width: 46px;
+    height: 28px;
+    border-radius: 999px;
+    background: var(--line);
+    position: relative;
+    transition: background-color 0.15s ease;
+  }
+  .switch-knob {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+    transition: transform 0.15s ease;
+  }
+  .switch input:checked + .switch-track {
+    background: var(--accent);
+  }
+  .switch input:checked + .switch-track .switch-knob {
+    transform: translateX(18px);
+  }
+  .switch input:focus-visible + .switch-track {
+    outline: 3px solid var(--focus);
+    outline-offset: 2px;
+  }
+  .switch-label {
+    font-size: 15px;
+    font-weight: 600;
+  }
+  .vault-note {
+    margin: 0;
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .chips {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    padding: 4px 4px 4px 12px;
+    border-radius: 999px;
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    letter-spacing: 0.08em;
+  }
+  .chip-x {
+    border: 0;
+    background: transparent;
+    color: inherit;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    opacity: 0.65;
+  }
+  .chip-x:hover {
+    opacity: 1;
+  }
+  .chip-x:focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 1px;
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .spinner {
       animation-duration: 2.4s;
     }
-    .pick {
+    .pick,
+    .switch-track,
+    .switch-knob {
       transition: none;
     }
   }
@@ -592,7 +703,21 @@
         <svg class="eye-shut" hidden width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.9 5.2A10 10 0 0 1 12 5c6.4 0 10 7 10 7a17 17 0 0 1-2.6 3.5M6.6 6.6A17 17 0 0 0 2 12s3.6 7 10 7a9.6 9.6 0 0 0 5.4-1.6"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/><path d="M3 3l18 18"/></svg>
       </button>
     </div>
-    <p class="hint">Case-sensitive. It's tried on every PDF you add. If one file uses a different password, you can type it on that file.</p>
+    <p class="hint">Case-sensitive, and saved on this phone for next time. It's tried on every PDF you add. If one file uses a different password, you can type it on that file.</p>
+  </section>
+
+  <section class="vault" id="vault" aria-labelledby="vault-title">
+    <div class="vault-head">
+      <h2 id="vault-title">Saved passwords</h2>
+      <button type="button" class="text-btn" id="forget-all" hidden>Forget all</button>
+    </div>
+    <label class="switch">
+      <input type="checkbox" id="remember-toggle" checked>
+      <span class="switch-track" aria-hidden="true"><span class="switch-knob"></span></span>
+      <span class="switch-label">Remember passwords on this phone</span>
+    </label>
+    <p class="vault-note">A password that unlocks a file is kept only on this device, so your usual statements open on their own next time. Nothing is uploaded. Turn this off to forget them.</p>
+    <ul class="chips" id="vault-list" hidden></ul>
   </section>
 
   <label class="pick" id="pick">
@@ -623,7 +748,7 @@
   <section class="how" id="how" aria-labelledby="how-title">
     <h2 id="how-title">How it works</h2>
     <ol class="steps">
-      <li><span><strong>Type the password</strong> you use to open the statement.</span></li>
+      <li><span><strong>Type the password</strong> the first time. It's saved on this phone, so next time your statements open on their own.</span></li>
       <li><span><strong>Choose the PDFs.</strong> Pick several at once if they share a password.</span></li>
       <li><span><strong>Send the unlocked copy</strong> to your CA on WhatsApp or Mail, or save it to Files.</span></li>
     </ol>
@@ -869,6 +994,10 @@
     const dock = $('dock');
     const shareAllBtn = $('share-all');
     const toastEl = $('toast');
+    const vaultSection = $('vault');
+    const vaultList = $('vault-list');
+    const rememberToggle = $('remember-toggle');
+    const forgetAll = $('forget-all');
 
     const items = [];
     let nextId = 1;
@@ -954,7 +1083,7 @@
           el.retryInput.focus();
           return;
         }
-        enqueue(() => process(item, pw));
+        enqueue(() => unlockItem(item, [pw], { explicit: true }));
       });
       item.el = el;
       return li;
@@ -1002,51 +1131,178 @@
       howSection.hidden = items.length > 0;
     }
 
-    async function process(item, password, { quiet = false } = {}) {
+    // ---------- Saved passwords (kept only in this browser) ----------
+    const vault = (() => {
+      const REMEMBER_KEY = 'unlock-pdf:remember';
+      const LIST_KEY = 'unlock-pdf:passwords';
+      let remember = true;
+      let list = [];
+      try {
+        const r = localStorage.getItem(REMEMBER_KEY);
+        remember = r === null ? true : r === '1';
+        const stored = JSON.parse(localStorage.getItem(LIST_KEY) || '[]');
+        if (Array.isArray(stored)) list = stored.filter((x) => typeof x === 'string' && x).slice(0, 50);
+      } catch {}
+      const persist = () => {
+        try {
+          localStorage.setItem(LIST_KEY, JSON.stringify(list));
+          localStorage.setItem(REMEMBER_KEY, remember ? '1' : '0');
+        } catch {}
+      };
+      return {
+        list: () => list.slice(),
+        isOn: () => remember,
+        add(pw) {
+          if (!remember || !pw || list.includes(pw)) return false;
+          list.push(pw);
+          if (list.length > 50) list = list.slice(-50);
+          persist();
+          return true;
+        },
+        remove(pw) {
+          const i = list.indexOf(pw);
+          if (i < 0) return;
+          list.splice(i, 1);
+          persist();
+        },
+        clear() {
+          list = [];
+          persist();
+        },
+        setRemember(on) {
+          remember = on;
+          if (!on) list = []; // turning it off forgets what was saved
+          persist();
+        },
+      };
+    })();
+
+    function rememberPassword(pw) {
+      if (vault.add(pw)) renderVault();
+    }
+
+    // Passwords tried automatically on a newly added file: the shared field
+    // first, then the ones saved on this device.
+    function autoCandidates() {
+      const list = [];
+      if (passwordInput.value) list.push(passwordInput.value);
+      for (const pw of vault.list()) list.push(pw);
+      return list;
+    }
+
+    function maskPassword(pw) {
+      if (pw.length <= 3) return '•'.repeat(Math.max(pw.length, 1));
+      return pw.slice(0, 2) + '••••';
+    }
+
+    function renderVault() {
+      const saved = vault.list();
+      rememberToggle.checked = vault.isOn();
+      vaultList.innerHTML = '';
+      for (const pw of saved) {
+        const li = document.createElement('li');
+        li.className = 'chip';
+        const label = document.createElement('span');
+        label.className = 'chip-label';
+        label.textContent = maskPassword(pw);
+        const del = document.createElement('button');
+        del.type = 'button';
+        del.className = 'chip-x';
+        del.setAttribute('aria-label', 'Forget this password');
+        del.innerHTML = ICONS.close;
+        del.addEventListener('click', () => {
+          vault.remove(pw);
+          renderVault();
+        });
+        li.append(label, del);
+        vaultList.appendChild(li);
+      }
+      vaultList.hidden = saved.length === 0;
+      forgetAll.hidden = saved.length === 0;
+    }
+
+    // ---------- Unlocking ----------
+    // Try each candidate password in turn (an empty one first, which unlocks
+    // files that only carry print/copy restrictions). Stops at the first that
+    // works and, on success, remembers a real password for next time.
+    async function unlockItem(item, candidates, { explicit = false, quiet = false } = {}) {
       if (!items.includes(item) || item.state === 'done') return;
       const before = item.state;
-      item.tried.add(password);
+
+      const toTry = [];
+      const seen = new Set();
+      for (const pw of ['', ...candidates]) {
+        if (seen.has(pw) || item.tried.has(pw)) continue;
+        seen.add(pw);
+        toTry.push(pw);
+      }
+      if (!toTry.length) return;
+
       item.state = 'working';
       renderRow(item);
       // Let the spinner paint before the (synchronous) WebAssembly work starts.
       await new Promise((r) => requestAnimationFrame(() => setTimeout(r, 0)));
-      try {
-        const result = await unlock(item.bytes, password);
-        item.state = 'done';
-        item.kind = result.kind;
-        item.out = new Blob([result.out], { type: 'application/pdf' });
-        item.outName = unlockedName(item.name);
-        item.bytes = null;
-        item.detail = '';
-        renderRow(item);
-        updateDock();
-        if (password) tryOnOthers(password);
-      } catch (err) {
-        if (quiet) {
-          item.state = before;
-        } else if (err instanceof UnlockError && (err.code === 'needs' || err.code === 'wrong')) {
-          item.state = password ? 'wrong' : 'needs';
-        } else {
+
+      let sawPasswordPrompt = false;
+      let triedNonEmpty = false;
+      for (const pw of toTry) {
+        if (!items.includes(item)) return;
+        item.tried.add(pw);
+        if (pw) triedNonEmpty = true;
+        try {
+          const result = await unlock(item.bytes, pw);
+          item.state = 'done';
+          item.kind = result.kind;
+          item.out = new Blob([result.out], { type: 'application/pdf' });
+          item.outName = unlockedName(item.name);
+          item.bytes = null;
+          item.detail = '';
+          renderRow(item);
+          updateDock();
+          if (pw) {
+            rememberPassword(pw);
+            tryOnOthers(pw);
+          }
+          return;
+        } catch (err) {
+          if (err instanceof UnlockError && (err.code === 'needs' || err.code === 'wrong')) {
+            sawPasswordPrompt = true;
+            continue; // try the next candidate
+          }
+          if (quiet) {
+            item.state = before;
+            renderRow(item);
+            return;
+          }
           item.state = 'error';
           item.detail = err instanceof UnlockError ? err.message : 'Something went wrong while reading it. Try again, or re-download the PDF.';
           console.error(err);
+          renderRow(item);
+          return;
         }
-        renderRow(item);
       }
+
+      // None of the candidates worked.
+      if (quiet) item.state = before;
+      else if (sawPasswordPrompt) item.state = explicit && triedNonEmpty ? 'wrong' : 'needs';
+      else {
+        item.state = 'error';
+        item.detail = 'Something went wrong while reading it. Try again, or re-download the PDF.';
+      }
+      renderRow(item);
     }
 
-    // Queue a password for every file still waiting for one, skipping files
-    // that already tried it.
+    // Try a password the user just entered on every file still waiting for one.
     function retryLocked(password, options) {
       for (const item of items) {
         if ((item.state === 'needs' || item.state === 'wrong') && !item.tried.has(password)) {
-          item.tried.add(password);
-          enqueue(() => process(item, password, options));
+          enqueue(() => unlockItem(item, [password], options));
         }
       }
     }
 
-    // A password that worked on one file is often right for the rest.
+    // A password that worked on one file is often right for the rest; try it
+    // quietly so a mismatch doesn't flip another file to "wrong".
     function tryOnOthers(password) {
       retryLocked(password, { quiet: true });
     }
@@ -1054,7 +1310,7 @@
     async function addFiles(fileList) {
       const files = Array.from(fileList || []);
       if (!files.length) return;
-      const password = passwordInput.value;
+      const candidates = autoCandidates();
       for (const file of files) {
         const item = { id: nextId++, name: file.name || 'document.pdf', size: file.size, state: 'working', tried: new Set(), bytes: null };
         items.push(item);
@@ -1071,7 +1327,7 @@
             renderRow(item);
             return;
           }
-          await process(item, password);
+          await unlockItem(item, candidates);
         });
       }
     }
@@ -1168,7 +1424,7 @@
 
     // A new shared password is tried on every file still waiting for one.
     passwordInput.addEventListener('change', () => {
-      if (passwordInput.value) retryLocked(passwordInput.value);
+      if (passwordInput.value) retryLocked(passwordInput.value, { explicit: true });
     });
     passwordInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
@@ -1176,6 +1432,17 @@
         passwordInput.blur(); // fires `change`
       }
     });
+
+    // Saved-passwords controls.
+    rememberToggle.addEventListener('change', () => {
+      vault.setRemember(rememberToggle.checked);
+      renderVault();
+    });
+    forgetAll.addEventListener('click', () => {
+      vault.clear();
+      renderVault();
+    });
+    renderVault();
 
     // Drag and drop on desktop.
     let dragDepth = 0;
