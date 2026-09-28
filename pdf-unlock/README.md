@@ -5,13 +5,14 @@ A small web app for iPhone that removes the open password from a PDF, such as a 
 - The PDF is unlocked inside the browser. Nothing is uploaded to a server.
 - Works with AES-256, AES-128 and RC4 encrypted PDFs, and also removes print and copy restrictions.
 - Add several PDFs at once. A password that works on one file is tried on the others.
+- **Remembers your passwords on the device.** A password that unlocks a file is saved in this browser (never uploaded), so the next batch of statements unlocks with no typing. There's a toggle to turn this off, and a way to forget individual passwords. It cannot unlock a file whose password you have never entered — it only reuses passwords you have used before.
 - On iPhone, **Share** opens the share sheet, so you can send the file straight to WhatsApp or Mail, or save it to Files.
 
 ## Using it on iPhone
 
 1. Open the app's URL in Safari.
-2. Tap **Share**, then **Add to Home Screen**. It now opens like a normal app.
-3. Type the password, tap **Choose PDFs**, and pick the statements.
+2. Tap **Share**, then **Add to Home Screen**. It now opens like a normal app with its own icon.
+3. Type the password once, tap **Choose PDFs**, and pick the statements. Next time, just pick the files — the saved password unlocks them on its own.
 4. Tap **Share** on a file (or **Share all** at the bottom) and send it to your CA.
 
 ## Hosting
